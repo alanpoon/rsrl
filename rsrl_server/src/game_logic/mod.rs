@@ -45,6 +45,10 @@ pub fn update_gamestate<T: GameCon>(
             *step = *step + 1;
         }
     }
+    let mut h = ClientReceivedMsg::deserialize_receive("{}").unwrap();
+    h.set_gamestate(gamestate.clone());
+    con.tx_send(h,log);
+    //println!("gamestate {:?}",gamestate);
 }
 pub fn state_space() -> ProductSpace<Interval> {
     ProductSpace::empty() + Interval::bounded(X_MIN, X_MAX) + Interval::bounded(V_MIN, V_MAX)

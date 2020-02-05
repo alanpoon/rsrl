@@ -50,11 +50,11 @@ where T: GameCon
                         },
                         con,
                         _gamestate,
-                    ) => match _gamestate {
-                        GameState::ShowResult(step) => {
-                            break 'game;
-                        },
+                    ) => {
+                        println!("break");
+                        break 'game;
                     },
+                    _ =>{}
                 }
             }
         }

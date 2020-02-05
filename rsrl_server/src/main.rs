@@ -1,7 +1,6 @@
 extern crate futures;
 extern crate rsrl;
 extern crate rsrl_codec;
-extern crate tokio_core;
 #[macro_use]
 extern crate slog;
 
@@ -21,6 +20,7 @@ use rsrl::{
     SerialExperiment,
 };
 pub mod game_logic;
+
 use rsrl::{
     domains::{Domain, Observation, Transition},
     spaces::{discrete::Ordinal, real::Interval, ProductSpace},
@@ -34,14 +34,17 @@ const CONNECTION: &'static str = "127.0.0.1:8080";
 pub struct MountainCar {
     x: f64,
     v: f64,
+    end:bool,
     tx: mpsc::Sender<GameCommand>,
     con_rx: futures::channel::mpsc::Receiver<OwnedMessage>,
     from: Observation<Vec<f64>>,
 }
+
 impl MountainCar {
     pub fn new(
         x: f64,
         v: f64,
+        end: bool,
         tx: mpsc::Sender<GameCommand>,
         con_rx: futures::channel::mpsc::Receiver<OwnedMessage>,
     ) -> MountainCar
@@ -49,6 +52,7 @@ impl MountainCar {
         MountainCar {
             x,
             v,
+            end,
             tx,
             con_rx,
             from: Observation::Full(vec![x, v]),
@@ -56,7 +60,7 @@ impl MountainCar {
     }
 
     fn update_state(&mut self, a: usize) {
-        let mut k1 = GameCommand::new(a);
+        let k1 = GameCommand::new(a);
         self.tx.send(k1).unwrap();
     }
 }
@@ -69,7 +73,7 @@ impl Default for MountainCar {
             let mut log: Vec<ClientReceivedMsg> = vec![];
             game_logic::GameEngine::new(player_con).run(rx, &mut log);
         });
-        MountainCar::new(-0.5, 0.0, tx, con_rx)
+        MountainCar::new(-0.5, 0.0, false,tx, con_rx)
     }
 }
 
@@ -78,36 +82,51 @@ impl Domain for MountainCar {
     type ActionSpace = Ordinal;
 
     fn emit(&self) -> Observation<Vec<f64>> {
-        let mut t = None;
-        if let Ok(msg) = self.con_rx.try_next() {
-            if let Some(OwnedMessage::Text(z)) = msg {
-                if let Ok(ClientReceivedMsg { gamestate, .. }) =
-                    ClientReceivedMsg::deserialize_receive(&z)
-                {
-                    match gamestate.unwrap().unwrap() {
-                        GameState::ShowResult(_) => {
-                            t = Some(Observation::Terminal(vec![self.x, self.v]));
-                        },
-                        GameState::Game(x, v, _step) => {
-                            self.x = x;
-                            self.v = v;
-                            t = Some(Observation::Full(vec![self.x, self.v]));
-                        },
+        if self.end{
+            Observation::Terminal(vec![self.x, self.v])
+        }else{
+            Observation::Full(vec![self.x, self.v])
+        }
+    }
+
+    fn step(&mut self, action: usize) -> Transition<Vec<f64>, usize> {
+        self.update_state(action);
+        let mut k =true;
+        while k{
+            if let Ok(msg) = self.con_rx.try_next() {
+                if let Some(OwnedMessage::Text(z)) = msg {
+                    if let Ok(ClientReceivedMsg { gamestate, .. }) =
+                        ClientReceivedMsg::deserialize_receive(&z)
+                    {
+                        k=false;
+                        match gamestate.unwrap().unwrap() {
+                            GameState::ShowResult(_) => {
+                                self.end =true;
+                                let mut k1 = GameCommand::new(0);
+                                k1.a=None;
+                                k1.exit_game =Some(true);
+                                self.tx.send(k1).unwrap();
+                            },
+                            GameState::Game(x, v, step) => {
+                                self.x = x;
+                                self.v = v;
+                                if step==1000{
+                                    let mut k1 = GameCommand::new(0);
+                                    k1.a=None;
+                                    k1.exit_game =Some(true);
+                                    self.tx.send(k1).unwrap();
+                                }
+                            },
+                        }
                     }
                 }
             }
         }
-
-        t.unwrap()
-    }
-
-    fn step(&mut self, action: usize) -> Transition<Vec<f64>, usize> {
-        let from = self.from;
-
-        self.update_state(action);
-
+        
+        //println!("x {:?}, v {:?} end {:?} action {:?}",self.x,self.v,self.end,action);
+        let from = self.from.clone();
         let to = self.emit();
-        self.from = to;
+        self.from = to.clone();
         Transition {
             from,
             action,
