@@ -39,14 +39,14 @@ fn softmax_stable<C: FromIterator<f64>>(values: &[f64], tau: f64) -> C {
 
 pub type Gibbs<F> = Softmax<F>;
 
-#[derive(Parameterised)]
+#[derive(Parameterised,Clone)]
 pub struct Softmax<F> {
     #[weights] fa: F,
 
     pub tau: f64,
 }
 
-impl<F> Softmax<F> {
+impl<F:std::clone::Clone> Softmax<F> {
     pub fn new(fa: F, tau: f64) -> Self {
         if tau.abs() < 1e-7 {
             panic!("Tau parameter in Softmax must be non-zero.");
@@ -74,6 +74,9 @@ impl<F> Softmax<F> {
         }
 
         jac
+    }
+    pub fn fa(&self)->F{
+        self.fa.clone()
     }
 }
 
@@ -103,7 +106,7 @@ impl<S, F: EnumerableStateActionFunction<S>> EnumerablePolicy<S> for Softmax<F> 
 
 impl<S, F> DifferentiablePolicy<S> for Softmax<F>
 where
-    F: EnumerableStateActionFunction<S> + DifferentiableStateActionFunction<S, usize> + Parameterised
+    F: EnumerableStateActionFunction<S> + DifferentiableStateActionFunction<S, usize> + Parameterised + std::fmt::Debug+std::clone::Clone
 {
     fn update(&mut self, input: &S, a: &usize, error: f64) {
         self.fa.update_grad_scaled(&self.gl_matrix(input, a), error);

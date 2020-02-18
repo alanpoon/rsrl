@@ -15,7 +15,7 @@ pub struct A2C<C, P> {
     pub alpha: f64,
 }
 
-impl<C, P> A2C<C, P> {
+impl<C, P: std::clone::Clone> A2C<C, P> {
     pub fn new(critic: C, policy: P, alpha: f64) -> Self {
         A2C {
             critic,
@@ -24,9 +24,12 @@ impl<C, P> A2C<C, P> {
             alpha,
         }
     }
+    pub fn policy(&self)->P{
+        self.policy.clone()
+    }
 }
 
-impl<S, C, P> OnlineLearner<S, P::Action> for A2C<C, P>
+impl<S, C, P:std::clone::Clone> OnlineLearner<S, P::Action> for A2C<C, P>
 where
     C: OnlineLearner<S, P::Action> + ValuePredictor<S> + ActionValuePredictor<S, P::Action>,
     P: DifferentiablePolicy<S>,
@@ -47,7 +50,7 @@ where
     }
 }
 
-impl<S, C, P> ValuePredictor<S> for A2C<C, P>
+impl<S, C, P:std::clone::Clone> ValuePredictor<S> for A2C<C, P>
 where
     C: ValuePredictor<S>,
 {
@@ -56,7 +59,7 @@ where
     }
 }
 
-impl<S, C, P> ActionValuePredictor<S, P::Action> for A2C<C, P>
+impl<S, C, P:std::clone::Clone> ActionValuePredictor<S, P::Action> for A2C<C, P>
 where
     C: ActionValuePredictor<S, P::Action>,
     P: Policy<S>,
@@ -66,7 +69,7 @@ where
     }
 }
 
-impl<S, C, P> Controller<S, P::Action> for A2C<C, P>
+impl<S, C, P:std::clone::Clone> Controller<S, P::Action> for A2C<C, P>
 where
     P: Policy<S>,
 {
