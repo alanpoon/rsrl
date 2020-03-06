@@ -14,7 +14,7 @@ use crate::{
 use ndarray::Array2;
 use rand::Rng;
 use std::{f64, iter::FromIterator};
-
+use serde::{Serialize,Deserialize};
 fn softmax<C: FromIterator<f64>>(values: &[f64], tau: f64, c: f64) -> C {
     let mut z = 0.0;
 
@@ -46,7 +46,7 @@ pub struct Softmax<F> {
     pub tau: f64,
 }
 
-impl<F:std::clone::Clone> Softmax<F> {
+impl<'de,F:std::clone::Clone+Serialize+ Deserialize<'de>> Softmax<F> {
     pub fn new(fa: F, tau: f64) -> Self {
         if tau.abs() < 1e-7 {
             panic!("Tau parameter in Softmax must be non-zero.");
@@ -104,9 +104,9 @@ impl<S, F: EnumerableStateActionFunction<S>> EnumerablePolicy<S> for Softmax<F> 
     }
 }
 
-impl<S, F> DifferentiablePolicy<S> for Softmax<F>
+impl<'de,S, F> DifferentiablePolicy<S> for Softmax<F>
 where
-    F: EnumerableStateActionFunction<S> + DifferentiableStateActionFunction<S, usize> + Parameterised + std::fmt::Debug+std::clone::Clone
+    F: EnumerableStateActionFunction<S> + DifferentiableStateActionFunction<S, usize> + Parameterised + std::fmt::Debug+std::clone::Clone+Serialize+Deserialize<'de>
 {
     fn update(&mut self, input: &S, a: &usize, error: f64) {
         self.fa.update_grad_scaled(&self.gl_matrix(input, a), error);
