@@ -4,5 +4,6 @@ members = [
     "rsrl_domains",
     "rsrl_protocol",
     "rsrl_server",
-    "rsrl_codec"
+    "rsrl_codec",
+    "rsrl_lobby"
 ]
