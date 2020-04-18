@@ -123,7 +123,6 @@ impl Domain for MountainCar {
             }
         }
         
-        //println!("x {:?}, v {:?} end {:?} action {:?}",self.x,self.v,self.end,action);
         let from = self.from.clone();
         let to = self.emit();
         self.from = to.clone();

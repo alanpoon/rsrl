@@ -27,4 +27,4 @@ fn dv(x: f64, a: f64) -> f64 { FORCE_CAR * a + FORCE_G * (HILL_FREQ * x).cos() }
 pub fn state_space() -> ProductSpace<Interval> {
     ProductSpace::empty() + Interval::bounded(X_MIN, X_MAX) + Interval::bounded(V_MIN, V_MAX)
 }
-pub fn action_space() -> Ordinal { Ordinal::new(188) }
+pub fn action_space() -> Ordinal { Ordinal::new(17) }
