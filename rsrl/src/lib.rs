@@ -5,7 +5,6 @@
 //! existing methods for rapid prototyping.
 #[macro_use]
 extern crate ndarray;
-extern crate ndarray_linalg;
 extern crate rand;
 extern crate rand_distr;
 

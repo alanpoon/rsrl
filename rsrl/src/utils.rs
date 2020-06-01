@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use ndarray::Array2;
+use nalgebra::
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use std::f64;
 
@@ -59,11 +60,13 @@ pub fn sub2ind(dims: &[usize], inds: &[usize]) -> usize {
 /// Compute the pseudo-inverse of a real matrix using SVD.
 pub fn pinv(m: &Array2<f64>) -> Result<Array2<f64>, ndarray_linalg::error::LinalgError> {
     use ndarray::Axis;
-    use ndarray_linalg::svd::SVD;
+    use nalgebra::{DMatrix,DVector};
 
     let m_dim = m.dim();
     let max_dim = m_dim.0.max(m_dim.1);
-
+    let b = m.reversed_axes();
+    let nalg = DMatrix::from_iterator(b.cols(),b.rows(),b.iter().cloned());
+    /*
     m.svd(true, true).map(|(u, s, vt)| {
         // u: (M x M)
         // s: diag{(M x N)} => (max{M, N} x 1)
@@ -91,6 +94,7 @@ pub fn pinv(m: &Array2<f64>) -> Result<Array2<f64>, ndarray_linalg::error::Linal
 
         vt.t().dot(&(&u.t() * &sinv))
     })
+    */
 }
 
 /// Given a vector containing a partial Cartesian product, and a list of items,
